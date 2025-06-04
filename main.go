@@ -2,25 +2,32 @@ package main
 
 import (
 	"bufio"
+	"os/exec"
+	"runtime"
+
+	// "encoding/csv"
 	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 )
 
+// deklarasi struct
 type Penanaman struct {
+	// {Struct untuk melihat lokasi lahan dan jumlah bibit yang tertanam}
 	id                        int
 	namatanaman, jenistanaman string
 	lahan, jumlahBibit        int
 }
 
 type Tanaman struct {
+	// {Struct untuk melihat nama sayuran / tanaman yang terdiri dari Nama, Jenis, Grade (kualitas)}
 	id                 int
 	nama, jenis, grade string
 }
 
 type HasilPanen struct {
+	// {Struct untuk melihat stock dalam jumlahKg dan grade yang tersedia}
 	id       int
 	nama     string
 	jenis    string
@@ -29,1208 +36,792 @@ type HasilPanen struct {
 }
 
 type RiwayatPanen struct {
+	// {Menampilkan riwayatPanen}
 	id             int
 	nama, jenis    string
 	jumlahKg       float64
 	grade, tanggal string
 }
 
-var arrTanaman = []Tanaman{}
-var arrPenanaman = []Penanaman{}
-var arrHasilPanen = []HasilPanen{}
-var arrRiwayatPanen = []RiwayatPanen{}
-var reader = bufio.NewReader(os.Stdin)
+// Membuka list data Tanaman
+
+// deklarasi 3 Slice
+var arrTanaman = [100]Tanaman{}
+var arrPenanaman = [100]Penanaman{}
+var arrHasilPanen = [100]HasilPanen{}
+var arrRiwayatPanen = [100]RiwayatPanen{}
 
 func main() {
 	inisiasiDataAwal()
 	for {
-		bubbleSort(&arrPenanaman, &arrTanaman, &arrHasilPanen)
-		insertionSort(&arrRiwayatPanen)
-		var Menu int
-		menu()
-		fmt.Print("> ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-		Menu, _ = strconv.Atoi(input)
-
-		switch Menu {
-		case 1:
-			fmt.Println(" ")
-			fmt.Println("------ Menu Penanaman ------")
-			subMenu()
-			pilihMenu(Menu)
-		case 2:
-			fmt.Println(" ")
-			fmt.Println("------ Menu Tanaman ------")
-			subMenu()
-			pilihMenu(Menu)
-		case 3:
-			fmt.Println(" ")
-			fmt.Println("------ Menu Hasil Panen ------")
-			subMenu()
-			pilihMenu(Menu)
-		case 4:
-			fmt.Println(" ")
-			fmt.Println("------ Menu Riwayat Penen ------")
-			subMenu()
-			pilihMenu(Menu)
-		case 5:
+		kondisi := menu()
+		if !kondisi {
 			return
+		} else {
+			continue
 		}
-
 	}
 }
 
-func menu() {
+/*
+===============================
+|| Menu Handler (Pakai Switch) ||
+===============================
+*/
+func menu() bool {
+	var counterPenanaman = 20
+	var counterTanaman = 20
+	var counterHasilPanen = 20
+	var counterRiwayatPanen = 20
+
+	var reader = bufio.NewReader(os.Stdin)
 	fmt.Println("------ Menu ------")
 	fmt.Println("1. Penanaman")
 	fmt.Println("2. Tanaman")
 	fmt.Println("3. Hasil Panen")
 	fmt.Println("4. Riwayat Panen")
 	fmt.Println("5. Keluar")
+	fmt.Print("Pilih Menu : ")
+	userInput, _ := reader.ReadString('\n')
+	userInput = strings.TrimSpace(userInput)
+	input, _ := strconv.Atoi(userInput)
+	switch input {
+	case 1:
+		clearTerminal()
+		fmt.Println("===== (Penanaman) =====")
+		menuPenanaman(1, &counterPenanaman)
+
+	case 2:
+		fmt.Println("=====  (Tanaman)  =====")
+		menuTanaman(2, &counterTanaman)
+
+	case 3:
+		fmt.Println("===== (Hasil Panen) =====")
+		menuHasilPanen(3, &counterHasilPanen)
+
+	case 4:
+		fmt.Println("===== (Riwayat Panen) =====")
+		menuRiwayatPanen(4, &counterRiwayatPanen)
+
+	case 5:
+		return false
+	default:
+		clearTerminal()
+		fmt.Println("===== Error =====")
+		fmt.Printf("Tidak Valid: %d\n", input)
+	}
+	return true
 }
-func subMenu() {
+
+/* ===============================
+|| CSV HANDLER (import Encoding)||
+============================== */
+
+/* ===============================
+|| Sort (Selection & Insertion) ||
+=============================== */
+
+/*
+	===============================
+
+|| Search (Sequential & Binary) ||
+===============================
+*/
+func SequentialSearch(arrTujuan int) {
+	var input string
+	var reader = bufio.NewReader(os.Stdin)
+	fmt.Print("Masukkan nama tanaman yang ingin dicari: ")
+	input, _ = reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	input = strings.ToLower(input)
+	switch arrTujuan {
+	case 1:
+		var temp = [100]Penanaman{}
+		count := 0
+		for i, v := range arrPenanaman {
+			if strings.Contains(strings.ToLower(input), strings.ToLower(v.namatanaman)) || strings.HasPrefix(strings.ToLower(v.namatanaman), strings.ToLower(input)) {
+				temp[count] = arrPenanaman[i]
+				count++
+			}
+		}
+		tampilkanPenanaman(temp)
+	case 2:
+		var temp = [100]Tanaman{}
+		count := 0
+		for i, v := range arrTanaman {
+			if strings.Contains(strings.ToLower(input), strings.ToLower(v.nama)) || strings.HasPrefix(strings.ToLower(v.nama), strings.ToLower(input)) {
+				temp[count] = arrTanaman[i]
+				count++
+			}
+		}
+		// tampilkanPenanaman(temp)
+	case 3:
+		var temp = [100]HasilPanen{}
+		count := 0
+		for i, v := range arrHasilPanen {
+			if strings.Contains(strings.ToLower(input), strings.ToLower(v.nama)) || strings.HasPrefix(strings.ToLower(v.nama), strings.ToLower(input)) {
+				temp[count] = arrHasilPanen[i]
+				count++
+			}
+		}
+		// tampilkanPenanaman(temp)
+	case 4:
+		var temp = [100]RiwayatPanen{}
+		count := 0
+		for i, v := range arrRiwayatPanen {
+			if strings.Contains(strings.ToLower(input), strings.ToLower(v.nama)) || strings.HasPrefix(strings.ToLower(v.nama), strings.ToLower(input)) {
+				temp[count] = arrRiwayatPanen[i]
+				count++
+			}
+		}
+		// tampilkanPenanaman(temp)
+	}
+}
+
+/*
+===============================
+|| SubMenu                   ||
+===============================
+*/
+func menuPenanaman(arrTujuan int, x *int) {
+	var reader = bufio.NewReader(os.Stdin)
 	fmt.Println("1. Tambah")
 	fmt.Println("2. Edit")
 	fmt.Println("3. Hapus")
 	fmt.Println("4. Tampilkan")
 	fmt.Println("5. Pencarian(Search)")
 	fmt.Println("6. kembali")
-}
-
-func pilihMenu(n int) {
-	var userInput int
-	fmt.Print("> ")
-	input, _ := reader.ReadString('\n')
-	input = strings.TrimSpace(input)
-	userInput, _ = strconv.Atoi(input)
-
-	switch userInput {
+	fmt.Print("Pilih Menu: ")
+	userInput, _ := reader.ReadString('\n')
+	userInput = strings.TrimSpace(userInput)
+	input, _ := strconv.Atoi(userInput)
+	switch input {
 	case 1:
-		switch n {
-		case 1:
-			tambah(&arrPenanaman)
-		case 2:
-			tambah(&arrTanaman)
-		case 3:
-			tambah(&arrHasilPanen)
-		case 4:
-			tambah(&arrHasilPanen)
-		default:
-			fmt.Println("Input Salah")
-
-		}
-
+		clearTerminal()
+		TambahData(1, x)
 	case 2:
-		switch n {
-		case 1:
-			edit(&arrPenanaman)
-		case 2:
-			edit(&arrTanaman)
-		case 3:
-			edit(&arrHasilPanen)
-		case 4:
-			edit(&arrRiwayatPanen)
-		default:
-			fmt.Println("Input Salah")
+		clearTerminal()
 
-		}
 	case 3:
-		switch n {
-		case 1:
-			hapus(&arrPenanaman)
-		case 2:
-			hapus(&arrTanaman)
-		case 3:
-			hapus(&arrHasilPanen)
-		case 4:
-			hapus(&arrRiwayatPanen)
-		default:
-			fmt.Println("Input Salah")
+		clearTerminal()
 
-		}
 	case 4:
-		switch n {
-		case 1:
-			tampilkan(&arrPenanaman, false)
-		case 2:
-			tampilkan(&arrTanaman, false)
-		case 3:
-			tampilkan(&arrHasilPanen, false)
-		case 4:
-			tampilkan(&arrRiwayatPanen, false)
-		default:
-			fmt.Println("Input Salah")
-		}
+		clearTerminal()
+		tampilkanPenanaman(arrPenanaman)
 	case 5:
-		switch n {
-		case 1:
-			search(&arrPenanaman)
-		case 2:
-			search(&arrTanaman)
-		case 3:
-			search(&arrHasilPanen)
-		case 4:
-			searchBinary(&arrRiwayatPanen)
-		default:
-			fmt.Println("Input Salah")
-		}
+		clearTerminal()
+		SequentialSearch(arrTujuan)
 	case 6:
+		clearTerminal()
 		return
 	default:
-		fmt.Println("Input Salah")
+		clearTerminal()
+		fmt.Println("===== Error =====")
+		fmt.Printf("Tidak Valid: %d\n", input)
+	}
+}
+func menuTanaman(arrTujuan int, x *int) {
+	var reader = bufio.NewReader(os.Stdin)
+	fmt.Println("1. Tambah")
+	fmt.Println("2. Edit")
+	fmt.Println("3. Hapus")
+	fmt.Println("4. Tampilkan")
+	fmt.Println("5. Pencarian(Search)")
+	fmt.Println("6. kembali")
+	fmt.Print("Pilih Menu: ")
+	userInput, _ := reader.ReadString('\n')
+	userInput = strings.TrimSpace(userInput)
+	input, _ := strconv.Atoi(userInput)
+	switch input {
+	case 1:
+		clearTerminal()
+		TambahData(arrTujuan, x)
+	case 2:
+		clearTerminal()
+
+	case 3:
+		clearTerminal()
+
+	case 4:
+		clearTerminal()
+		tampilkanTanaman(arrTanaman)
+	case 5:
+		clearTerminal()
+		SequentialSearch(arrTujuan)
+	case 6:
+		clearTerminal()
+		return
+	default:
+		clearTerminal()
+		fmt.Println("===== Error =====")
+		fmt.Printf("Tidak Valid: %d\n", input)
+	}
+}
+func menuHasilPanen(arrTujuan int, x *int) {
+	var reader = bufio.NewReader(os.Stdin)
+	fmt.Println("1. Tambah")
+	fmt.Println("2. Edit")
+	fmt.Println("3. Hapus")
+	fmt.Println("4. Tampilkan")
+	fmt.Println("5. Pencarian(Search)")
+	fmt.Println("6. kembali")
+	fmt.Print("Pilih Menu: ")
+	userInput, _ := reader.ReadString('\n')
+	userInput = strings.TrimSpace(userInput)
+	input, _ := strconv.Atoi(userInput)
+	switch input {
+	case 1:
+		clearTerminal()
+		TambahData(arrTujuan, x)
+	case 2:
+		clearTerminal()
+
+	case 3:
+		clearTerminal()
+
+	case 4:
+		clearTerminal()
+		tampilkanHasilPanen(arrHasilPanen)
+	case 5:
+		clearTerminal()
+		SequentialSearch(arrTujuan)
+	case 6:
+		clearTerminal()
+		return
+	default:
+		clearTerminal()
+		fmt.Println("===== Error =====")
+		fmt.Printf("Tidak Valid: %d\n", input)
 	}
 }
 
-func tambah(data interface{}) {
-	switch v := data.(type) {
-	case *[]Penanaman:
-		var p Penanaman
-		p.id = len(*v) + 1
-		fmt.Print("Masukkan nama tanaman: ")
-		p.namatanaman, _ = reader.ReadString('\n')
-		p.namatanaman = strings.TrimSpace(p.namatanaman)
-		fmt.Print("Masukkan jenis tanaman : ")
-		p.jenistanaman, _ = reader.ReadString('\n')
-		p.jenistanaman = strings.TrimSpace(p.jenistanaman)
-		fmt.Print("Masukkan lahan: ")
-		fmt.Scanln(&p.lahan)
-		fmt.Print("Masukkan jumlah bibit: ")
-		fmt.Scanln(&p.jumlahBibit)
-		*v = append(*v, p)
-	case *[]Tanaman:
-		var t Tanaman
-		t.id = len(*v) + 1
-		fmt.Print("Masukkan nama tanaman: ")
-		t.nama, _ = reader.ReadString('\n')
-		t.nama = strings.TrimSpace(t.nama)
-		fmt.Print("Masukkan jenis tanaman : ")
-		t.jenis, _ = reader.ReadString('\n')
-		t.jenis = strings.TrimSpace(t.jenis)
-		fmt.Print("Masukkan grade: ")
-		fmt.Scanln(&t.grade)
-		*v = append(*v, t)
-
-	case *[]HasilPanen:
-		var k HasilPanen
-		k.id = len(*v) + 1
-		fmt.Print("Masukkan nama tanaman: ")
-		k.nama, _ = reader.ReadString('\n')
-		k.nama = strings.TrimSpace(k.nama)
-		fmt.Print("Masukkan jenis tanaman : ")
-		k.jenis, _ = reader.ReadString('\n')
-		k.jenis = strings.TrimSpace(k.jenis)
-		fmt.Print("Masukkan Jumlah(kg) : ")
-		fmt.Scanln(&k.jumlahKg)
-		fmt.Print("Masukkan grade: ")
-		fmt.Scanln(&k.grade)
-		*v = append(*v, k)
-	case *[]RiwayatPanen:
-		var k RiwayatPanen
-		k.id = len(*v) + 1
-		fmt.Print("Masukkan nama tanaman: ")
-		k.nama, _ = reader.ReadString('\n')
-		k.nama = strings.TrimSpace(k.nama)
-		fmt.Print("Masukkan jenis tanaman : ")
-		k.jenis, _ = reader.ReadString('\n')
-		k.jenis = strings.TrimSpace(k.jenis)
-		fmt.Print("Masukkan Jumlah(kg) : ")
-		fmt.Scanln(&k.jumlahKg)
-		fmt.Print("Masukkan grade: ")
-		fmt.Scanln(&k.grade)
-		*v = append(*v, k)
-		fmt.Print("Masukkan tanggal panen tanaman (YYYY-MM-DD): ")
-		k.tanggal, _ = reader.ReadString('\n')
-		k.tanggal = strings.TrimSpace(k.tanggal)
-	}
+func menuRiwayatPanen(arrTujuan int, x *int) {
+	clearTerminal()
+	tampilkanRiwayatPanen(arrRiwayatPanen)
 }
 
-func edit(data interface{}) {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Masukkan nama atau jenis tanaman yang ingin diedit: ")
-	input, _ := reader.ReadString('\n')
-	input = strings.TrimSpace(input)
-
-	switch v := data.(type) {
-	case *[]Penanaman:
-		var tempIndices []int
-		for i, item := range *v {
-			if strings.EqualFold(item.namatanaman, input) || strings.EqualFold(item.jenistanaman, input) {
-				tempIndices = append(tempIndices, i)
-			}
-		}
-
-		if len(tempIndices) == 0 {
-			fmt.Println("Data tidak ditemukan.")
-			return
-		}
-
-		var editIndex int
-		var temp = []Penanaman{}
-		if len(tempIndices) == 1 {
-			editIndex = tempIndices[0]
-		} else {
-			fmt.Println("Ditemukan beberapa item yang cocok:")
-			for _, idx := range tempIndices {
-				item := (*v)[idx]
-				temp = append(temp, Penanaman{item.id, item.namatanaman, item.jenistanaman, item.lahan, item.jumlahBibit})
-			}
-			tampilkan(&temp, true)
-
-			fmt.Print("Pilih nomor data yang ingin diedit: ")
-			choiceStr, _ := reader.ReadString('\n')
-			choiceStr = strings.TrimSpace(choiceStr)
-			choice, err := strconv.Atoi(choiceStr)
-			if err != nil || choice < 1 || choice > len(tempIndices) {
-				fmt.Println("Pilihan tidak valid.")
-				return
-			}
-
-			editIndex = tempIndices[choice-1]
-		}
-
-		// Input data baru
-		fmt.Print("Masukkan nama tanaman baru: ")
-		namaBaru, _ := reader.ReadString('\n')
-		namaBaru = strings.TrimSpace(namaBaru)
-
-		fmt.Print("Masukkan jenis tanaman baru: ")
-		jenisBaru, _ := reader.ReadString('\n')
-		jenisBaru = strings.TrimSpace(jenisBaru)
-
-		fmt.Print("Masukkan lahan baru: ")
-		var lahanBaru int
-		fmt.Scanln(&lahanBaru)
-
-		fmt.Print("Masukkan jumlah bibit baru: ")
-		var bibitBaru int
-		fmt.Scanln(&bibitBaru)
-
-		// Update data
-		(*v)[editIndex].namatanaman = namaBaru
-		(*v)[editIndex].jenistanaman = jenisBaru
-		(*v)[editIndex].lahan = lahanBaru
-		(*v)[editIndex].jumlahBibit = bibitBaru
-
-		fmt.Println("Data berhasil diubah.")
-
-	case *[]Tanaman:
-		var tempIndices []int
-		for i, item := range *v {
-			if strings.EqualFold(item.nama, input) || strings.EqualFold(item.jenis, input) {
-				tempIndices = append(tempIndices, i)
-			}
-		}
-
-		if len(tempIndices) == 0 {
-			fmt.Println("Data tidak ditemukan.")
-			return
-		}
-
-		var editIndex int
-		var temp = []Tanaman{}
-		if len(tempIndices) == 1 {
-			editIndex = tempIndices[0]
-		} else {
-			fmt.Println("Ditemukan beberapa item yang cocok:")
-			for _, idx := range tempIndices {
-				item := (*v)[idx]
-				temp = append(temp, Tanaman{item.id, item.nama, item.jenis, item.grade})
-			}
-			tampilkan(&temp, true)
-
-			fmt.Print("Pilih nomor data yang ingin diedit: ")
-			choiceStr, _ := reader.ReadString('\n')
-			choiceStr = strings.TrimSpace(choiceStr)
-			choice, err := strconv.Atoi(choiceStr)
-			if err != nil || choice < 1 || choice > len(tempIndices) {
-				fmt.Println("Pilihan tidak valid.")
-				return
-			}
-
-			editIndex = tempIndices[choice-1]
-		}
-
-		// Input data baru
-		fmt.Print("Masukkan nama tanaman baru: ")
-		namaBaru, _ := reader.ReadString('\n')
-		namaBaru = strings.TrimSpace(namaBaru)
-
-		fmt.Print("Masukkan jenis tanaman baru: ")
-		jenisBaru, _ := reader.ReadString('\n')
-		jenisBaru = strings.TrimSpace(jenisBaru)
-		
-		fmt.Print("Masukkan grade tanaman baru: ")
-		gradeBaru, _ := reader.ReadString('\n')
-		gradeBaru = strings.TrimSpace(gradeBaru)
-
-		// Update data
-		(*v)[editIndex].nama = namaBaru
-		(*v)[editIndex].jenis = jenisBaru
-		(*v)[editIndex].grade = gradeBaru
-
-		fmt.Println("Data berhasil diubah.")
-	case *[]HasilPanen:
-		var tempIndices []int
-		for i, item := range *v {
-			if strings.EqualFold(item.nama, input) || strings.EqualFold(item.jenis, input) {
-				tempIndices = append(tempIndices, i)
-			}
-		}
-
-		if len(tempIndices) == 0 {
-			fmt.Println("Data tidak ditemukan.")
-			return
-		}
-
-		var editIndex int
-		var temp = []HasilPanen{}
-		if len(tempIndices) == 1 {
-			editIndex = tempIndices[0]
-		} else {
-			fmt.Println("Ditemukan beberapa item yang cocok:")
-			for _, idx := range tempIndices {
-				item := (*v)[idx]
-				temp = append(temp, HasilPanen{item.id, item.nama, item.jenis, item.jumlahKg, item.grade})
-			}
-			tampilkan(&temp, true)
-
-			fmt.Print("Pilih nomor data yang ingin diedit: ")
-			choiceStr, _ := reader.ReadString('\n')
-			choiceStr = strings.TrimSpace(choiceStr)
-			choice, err := strconv.Atoi(choiceStr)
-			if err != nil || choice < 1 || choice > len(tempIndices) {
-				fmt.Println("Pilihan tidak valid.")
-				return
-			}
-
-			editIndex = tempIndices[choice-1]
-		}
-
-		// Input data baru
-		fmt.Print("Masukkan nama tanaman baru: ")
-		namaBaru, _ := reader.ReadString('\n')
-		namaBaru = strings.TrimSpace(namaBaru)
-
-		fmt.Print("Masukkan jenis tanaman baru: ")
-		jenisBaru, _ := reader.ReadString('\n')
-		jenisBaru = strings.TrimSpace(jenisBaru)
-
-		fmt.Print("Masukkan jumlah (Kg) baru: ")
-		var jumlahKg float64
-		fmt.Scanln(&jumlahKg)
-
-		fmt.Print("Masukkan grade baru: ")
-		var grade string
-		fmt.Scanln(&grade)
-
-		// Update data
-		(*v)[editIndex].nama = namaBaru
-		(*v)[editIndex].jenis = jenisBaru
-		(*v)[editIndex].jumlahKg = jumlahKg
-		(*v)[editIndex].grade = grade
-
-		fmt.Println("Data berhasil diubah.")
-	
-		case *[]RiwayatPanen:
-		var tempIndices []int
-		for i, item := range *v {
-			if strings.EqualFold(item.nama, input) || strings.EqualFold(item.jenis, input) {
-				tempIndices = append(tempIndices, i)
-			}
-		}
-
-		if len(tempIndices) == 0 {
-			fmt.Println("Data tidak ditemukan.")
-			return
-		}
-
-		var editIndex int
-		var temp = []RiwayatPanen{}
-		if len(tempIndices) == 1 {
-			editIndex = tempIndices[0]
-		} else {
-			fmt.Println("Ditemukan beberapa item yang cocok:")
-			for _, idx := range tempIndices {
-				item := (*v)[idx]
-				temp = append(temp, RiwayatPanen{item.id, item.nama, item.jenis, item.jumlahKg, item.grade, item.tanggal})
-			}
-			tampilkan(&temp, true)
-
-			fmt.Print("Pilih nomor data yang ingin diedit: ")
-			choiceStr, _ := reader.ReadString('\n')
-			choiceStr = strings.TrimSpace(choiceStr)
-			choice, err := strconv.Atoi(choiceStr)
-			if err != nil || choice < 1 || choice > len(tempIndices) {
-				fmt.Println("Pilihan tidak valid.")
-				return
-			}
-
-			editIndex = tempIndices[choice-1]
-		}
-
-		// Input data baru
-		fmt.Print("Masukkan nama tanaman baru: ")
-		namaBaru, _ := reader.ReadString('\n')
-		namaBaru = strings.TrimSpace(namaBaru)
-
-		fmt.Print("Masukkan jenis tanaman baru: ")
-		jenisBaru, _ := reader.ReadString('\n')
-		jenisBaru = strings.TrimSpace(jenisBaru)
-
-		fmt.Print("Masukkan jumlah (Kg) baru: ")
-		var jumlahKg float64
-		fmt.Scanln(&jumlahKg)
-		
-		fmt.Print("Masukkan grade tanaman baru: ")
-		gradeBaru, _ := reader.ReadString('\n')
-		gradeBaru = strings.TrimSpace(gradeBaru)
-
-		fmt.Print("Masukkan tanggal panen baru: ")
-		tanggalBaru, _ := reader.ReadString('\n')
-		tanggalBaru = strings.TrimSpace(tanggalBaru)
-
-		// Update data
-		(*v)[editIndex].nama = namaBaru
-		(*v)[editIndex].jenis = jenisBaru
-		(*v)[editIndex].jumlahKg = jumlahKg
-		(*v)[editIndex].grade = gradeBaru
-		(*v)[editIndex].tanggal = tanggalBaru
-
-		fmt.Println("Data berhasil diubah.")
-	}
-}
-
-func hapus(data interface{}) {
-	switch v := data.(type) {
-	case *[]Penanaman:
-		var sementara []Penanaman
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Masukkan ID atau Nama yang ingin dihapus: ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		// Coba konversi ke ID
-		if id, err := strconv.Atoi(input); err == nil {
-			for i, item := range *v {
-				if item.id == id {
-					*v = append((*v)[:i], (*v)[i+1:]...)
-					fmt.Println("Data dengan ID", id, "berhasil dihapus.")
-					return
-				}
-			}
-			fmt.Println("ID tidak ditemukan.")
-			return
-		}
-
-		// Cari berdasarkan Nama
-		var temp []int
-		for i, item := range *v {
-			if strings.EqualFold(item.jenistanaman, input) || strings.EqualFold(item.namatanaman, input) {
-				temp = append(temp, i)
-			}
-		}
-
-		if len(temp) == 0 {
-			fmt.Println("Nama tidak ditemukan.")
-			return
-		} else if len(temp) == 1 {
-			*v = append((*v)[:temp[0]], (*v)[temp[0]+1:]...)
-			fmt.Println("Data dengan nama", input, "berhasil dihapus.")
-			return
-		} else {
-			fmt.Println("Ditemukan beberapa item dengan nama tersebut:")
-			for _, idx := range temp {
-				item := (*v)[idx]
-				sementara = append(sementara, Penanaman{item.id, item.namatanaman, item.jenistanaman, item.lahan, item.jumlahBibit})
-			}
-			tampilkan(&sementara, true)
-			fmt.Print("Pilih nomor yang ingin dihapus: ")
-			hapus, _ := reader.ReadString('\n')
-			hapus = strings.TrimSpace(hapus)
-			final, err := strconv.Atoi(hapus)
-			if err != nil || final < 1 || final > len(temp) {
-				fmt.Println("Pilihan tidak valid.")
-				return
-			}
-
-			indexToDelete := temp[final-1]
-			*v = append((*v)[:indexToDelete], (*v)[indexToDelete+1:]...)
-			fmt.Println("Data berhasil dihapus.")
-		}
-	case *[]Tanaman:
-		var sementara []Tanaman
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Masukkan ID atau Nama yang ingin dihapus: ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		// Coba konversi ke ID
-		if id, err := strconv.Atoi(input); err == nil {
-			for i, item := range *v {
-				if item.id == id {
-					*v = append((*v)[:i], (*v)[i+1:]...)
-					fmt.Println("Data dengan ID", id, "berhasil dihapus.")
-					return
-				}
-			}
-			fmt.Println("ID tidak ditemukan.")
-			return
-		}
-
-		// Cari berdasarkan Nama
-		var temp []int
-		for i, item := range *v {
-			if strings.EqualFold(item.jenis, input) || strings.EqualFold(item.nama, input) {
-				temp = append(temp, i)
-			}
-		}
-
-		if len(temp) == 0 {
-			fmt.Println("Nama tidak ditemukan.")
-			return
-		} else if len(temp) == 1 {
-			*v = append((*v)[:temp[0]], (*v)[temp[0]+1:]...)
-			fmt.Println("Data dengan nama", input, "berhasil dihapus.")
-			return
-		} else {
-			fmt.Println("Ditemukan beberapa item dengan nama tersebut:")
-			for _, idx := range temp {
-				item := (*v)[idx]
-				sementara = append(sementara, Tanaman{item.id, item.nama, item.jenis, item.grade})
-			}
-			tampilkan(&sementara, true)
-			fmt.Print("Pilih nomor yang ingin dihapus: ")
-			hapus, _ := reader.ReadString('\n')
-			hapus = strings.TrimSpace(hapus)
-			final, err := strconv.Atoi(hapus)
-			if err != nil || final < 1 || final > len(temp) {
-				fmt.Println("Pilihan tidak valid.")
-				return
-			}
-
-			indexToDelete := temp[final-1]
-			*v = append((*v)[:indexToDelete], (*v)[indexToDelete+1:]...)
-			fmt.Println("Data berhasil dihapus.")
-		}
-	case *[]HasilPanen:
-		var sementara []HasilPanen
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Masukkan ID atau Nama yang ingin dihapus: ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		// Coba konversi ke ID
-		if id, err := strconv.Atoi(input); err == nil {
-			for i, item := range *v {
-				if item.id == id {
-					*v = append((*v)[:i], (*v)[i+1:]...)
-					fmt.Println("Data dengan ID", id, "berhasil dihapus.")
-					return
-				}
-			}
-			fmt.Println("ID tidak ditemukan.")
-			return
-		}
-
-		// Cari berdasarkan Nama
-		var temp []int
-		for i, item := range *v {
-			if strings.EqualFold(item.jenis, input) || strings.EqualFold(item.nama, input) {
-				temp = append(temp, i)
-			}
-		}
-
-		if len(temp) == 0 {
-			fmt.Println("Nama tidak ditemukan.")
-			return
-		} else if len(temp) == 1 {
-			*v = append((*v)[:temp[0]], (*v)[temp[0]+1:]...)
-			fmt.Println("Data dengan nama", input, "berhasil dihapus.")
-			return
-		} else {
-			fmt.Println("Ditemukan beberapa item dengan nama tersebut:")
-			for _, idx := range temp {
-				item := (*v)[idx]
-				sementara = append(sementara, HasilPanen{item.id, item.nama, item.jenis, item.jumlahKg, item.grade})
-			}
-			tampilkan(&sementara, true)
-			fmt.Print("Pilih nomor yang ingin dihapus: ")
-			hapus, _ := reader.ReadString('\n')
-			hapus = strings.TrimSpace(hapus)
-			final, err := strconv.Atoi(hapus)
-			if err != nil || final < 1 || final > len(temp) {
-				fmt.Println("Pilihan tidak valid.")
-				return
-			}
-
-			indexToDelete := temp[final-1]
-			*v = append((*v)[:indexToDelete], (*v)[indexToDelete+1:]...)
-			fmt.Println("Data berhasil dihapus.")
-		}
-	case *[]RiwayatPanen:
-		var sementara []RiwayatPanen
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Masukkan ID atau Nama yang ingin dihapus: ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		// Coba konversi ke ID
-		if id, err := strconv.Atoi(input); err == nil {
-			for i, item := range *v {
-				if item.id == id {
-					*v = append((*v)[:i], (*v)[i+1:]...)
-					fmt.Println("Data dengan ID", id, "berhasil dihapus.")
-					return
-				}
-			}
-			fmt.Println("ID tidak ditemukan.")
-			return
-		}
-
-		// Cari berdasarkan Nama
-		var temp []int
-		for i, item := range *v {
-			if strings.EqualFold(item.jenis, input) || strings.EqualFold(item.nama, input) {
-				temp = append(temp, i)
-			}
-		}
-
-		if len(temp) == 0 {
-			fmt.Println("Nama tidak ditemukan.")
-			return
-		} else if len(temp) == 1 {
-			*v = append((*v)[:temp[0]], (*v)[temp[0]+1:]...)
-			fmt.Println("Data dengan nama", input, "berhasil dihapus.")
-			return
-		} else {
-			fmt.Println("Ditemukan beberapa item dengan nama tersebut:")
-			for _, idx := range temp {
-				item := (*v)[idx]
-				sementara = append(sementara, RiwayatPanen{item.id, item.nama, item.jenis, item.jumlahKg, item.grade, item.tanggal})
-			}
-			tampilkan(&sementara, true)
-			fmt.Print("Pilih nomor yang ingin dihapus: ")
-			hapus, _ := reader.ReadString('\n')
-			hapus = strings.TrimSpace(hapus)
-			final, err := strconv.Atoi(hapus)
-			if err != nil || final < 1 || final > len(temp) {
-				fmt.Println("Pilihan tidak valid.")
-				return
-			}
-
-			indexToDelete := temp[final-1]
-			*v = append((*v)[:indexToDelete], (*v)[indexToDelete+1:]...)
-			fmt.Println("Data berhasil dihapus.")
-		}
-	}
-}
-func search(data interface{}) {
-	var nama string
-	fmt.Print("Masukkan nama tanaman yang ingin dicari: ")
-	nama, _ = reader.ReadString('\n')
-	nama = strings.TrimSpace(nama)
-	found := false
-
-	switch v := data.(type) {
-	case *[]Penanaman:
-		temp := []Penanaman{}
-		for _, p := range *v {
-			if strings.HasPrefix(strings.ToLower(p.jenistanaman), strings.ToLower(nama)) {
-				temp = append(temp, Penanaman{p.id, p.namatanaman, p.jenistanaman, p.lahan, p.jumlahBibit})
-				found = true
-			}
-		}
-		tampilkan(&temp, false)
-	case *[]Tanaman:
-		temp := []Tanaman{}
-		for _, p := range *v {
-			if strings.HasPrefix(strings.ToLower(p.jenis), strings.ToLower(nama)) {
-				temp = append(temp, Tanaman{p.id, p.nama, p.jenis, p.grade})
-				found = true
-			}
-		}
-		tampilkan(&temp, false)
-	case *[]HasilPanen:
-		temp := []HasilPanen{}
-		for _, p := range *v {
-			if strings.HasPrefix(strings.ToLower(p.jenis), strings.ToLower(nama)) {
-				temp = append(temp, HasilPanen{p.id, p.nama, p.jenis, p.jumlahKg, p.grade})
-				found = true
-			}
-		}
-		tampilkan(&temp, false)
+/*
+===============================
+|| Tabel (Tampilan)          ||
+===============================
+*/
+func tampilkanPenanaman(x [100]Penanaman) {
+	label := []string{"ID", "Nama", "Jenis", "Lahan", "Jumlah"}
+	lebarMaksimal := [5]int{}
+	for i, v := range label {
+		lebarMaksimal[i] = len(v)
 	}
 
-	if !found {
-		fmt.Println("Tanaman tidak ditemukan")
+	for _, v := range x {
+		kolom := [5]string{
+			strconv.Itoa(v.id),
+			v.namatanaman,
+			v.jenistanaman,
+			strconv.Itoa(v.lahan),
+			strconv.Itoa(v.jumlahBibit),
+		}
+
+		for i, v := range kolom {
+			if len(v) > lebarMaksimal[i] {
+				lebarMaksimal[i] = len(v)
+			}
+		}
+	}
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
+		}
+		// pojok kiri
+		fmt.Print("+")
+	}
+	// newline
+	fmt.Println()
+	// memberi garis di awal
+	fmt.Print("|")
+	for i, judul := range label {
+		// formatting string
+		fmt.Printf(" %-*s |", lebarMaksimal[i], judul)
+	}
+	// newline
+	fmt.Println()
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
+		}
+		// pojok kiri
+		fmt.Print("+")
+	}
+	// newline
+	fmt.Println()
+	// menampilkan isi array
+	for _, v := range x {
+		if len(v.namatanaman) == 0 {
+			fmt.Print("+")
+			for _, lebar := range lebarMaksimal {
+				for i := 0; i < lebar+2; i++ {
+					fmt.Print("-")
+				}
+				// pojok kiri
+				fmt.Print("+")
+			}
+			fmt.Println()
+			return
+		} else {
+			fmt.Print("|")
+		}
+		kolom := [5]string{
+			strconv.Itoa(v.id),
+			v.namatanaman,
+			v.jenistanaman,
+			strconv.Itoa(v.lahan),
+			strconv.Itoa(v.jumlahBibit),
+		}
+		if len(v.namatanaman) == 0 {
+			fmt.Print("+")
+			for _, lebar := range lebarMaksimal {
+				for i := 0; i < lebar+2; i++ {
+					fmt.Print("-")
+				}
+				// pojok kiri
+				fmt.Print("+")
+			}
+			fmt.Println()
+			return
+		}
+		for i, v := range kolom {
+
+			fmt.Printf(" %-*s |", lebarMaksimal[i], v)
+		}
+		fmt.Println()
 	}
 	fmt.Println()
+
+	// akhir dari tabel (penutup)
+	// pojok kanan
+
 }
-
-func searchBinary(arrRiwayatPanen *[]RiwayatPanen) {
-	var nama string
-	fmt.Print("Masukkan nama tanaman yang ingin dicari: ")
-	fmt.Scanln(&nama)
-	nama = strings.ToLower(nama)
-
-	low, high := 0, len(*arrRiwayatPanen)-1
-	found := false
-
-	for low <= high {
-		mid := (low + high) / 2
-		val := strings.ToLower((*arrRiwayatPanen)[mid].jenis)
-
-		if strings.HasPrefix(val, nama) {
-			hasil := (*arrRiwayatPanen)[mid]
-			fmt.Printf("id : %d, nama: %s, jenis: %s, jumlah (kg): %.2f, grade: %s, tanggal %s\n",
-				hasil.id, hasil.nama, hasil.jenis, hasil.jumlahKg, hasil.grade, hasil.tanggal)
-			found = true
-			break
-		}
-
-		if val < nama {
-			low = mid + 1
-		} else {
-			high = mid - 1
-		}
+func tampilkanRiwayatPanen(x [100]RiwayatPanen) {
+	label := []string{"ID", "Nama", "Jenis", "Grade", "Jumlah (Kg)", "Tanggal"}
+	lebarMaksimal := [6]int{}
+	for i, v := range label {
+		lebarMaksimal[i] = len(v)
 	}
 
-	if !found {
-		fmt.Println("Tanaman tidak ditemukan")
-	}
-}
+	for _, v := range x {
+		kolom := [6]string{
+			strconv.Itoa(v.id),
+			v.nama,
+			v.jenis,
+			v.grade,
+			strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
+			v.tanggal,
+		}
 
-func bubbleSort(arrPenanaman *[]Penanaman, arrTanaman *[]Tanaman, arrHasilPanen *[]HasilPanen) {
-	x := len(*arrPenanaman)
-	for i := 0; i < x-1; i++ {
-		tukar := false
-		for j := 0; j < x-i-1; j++ {
-			if (*arrPenanaman)[j].namatanaman > (*arrPenanaman)[j+1].namatanaman {
-				(*arrPenanaman)[j], (*arrPenanaman)[j+1] = (*arrPenanaman)[j+1], (*arrPenanaman)[j]
-				tukar = true
+		for i, v := range kolom {
+			if len(v) > lebarMaksimal[i] {
+				lebarMaksimal[i] = len(v)
 			}
 		}
-		if !tukar {
-			break
-		}
 	}
-	y := len(*arrTanaman)
-	for i := 0; i < y-1; i++ {
-		tukar := false
-		for j := 0; j < y-i-1; j++ {
-			if (*arrTanaman)[j].nama > (*arrTanaman)[j+1].nama {
-				(*arrTanaman)[j], (*arrTanaman)[j+1] = (*arrTanaman)[j+1], (*arrTanaman)[j]
-				tukar = true
-			}
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
 		}
-		if !tukar {
-			break
-		}
+		// pojok kiri
+		fmt.Print("+")
 	}
-	z := len(*arrHasilPanen)
-	for i := 0; i < z-1; i++ {
-		tukar := false
-		for j := 0; j < z-i-1; j++ {
-			if (*arrHasilPanen)[j].nama > (*arrHasilPanen)[j+1].nama {
-				(*arrHasilPanen)[j], (*arrHasilPanen)[j+1] = (*arrHasilPanen)[j+1], (*arrHasilPanen)[j]
-				tukar = true
-			}
-		}
-		if !tukar {
-			break
-		}
+	// newline
+	fmt.Println()
+	// memberi garis di awal
+	fmt.Print("|")
+	for i, judul := range label {
+		// formatting string
+		fmt.Printf(" %-*s |", lebarMaksimal[i], judul)
 	}
-}
-
-func insertionSort(arrRiwayatPanen *[]RiwayatPanen) {
-	for i := 1; i < len(*arrRiwayatPanen); i++ {
-		key := (*arrRiwayatPanen)[i]
-		j := i - 1
-
-		for j >= 0 && (*arrRiwayatPanen)[j].tanggal > key.tanggal {
-			(*arrRiwayatPanen)[j+1] = (*arrRiwayatPanen)[j]
-			j--
+	// newline
+	fmt.Println()
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
 		}
-		(*arrRiwayatPanen)[j+1] = key
+		// pojok kiri
+		fmt.Print("+")
 	}
-}
-
-func tampilkan(data interface{}, a bool) {
-	clearTerminal()
-	switch arr := data.(type) {
-	case *[]Penanaman:
-		var label = []string{}
-		if a {
-			label = []string{"No", "ID", "Nama", "Jenis", "Lahan", "Jumlah"}
-		} else {
-			label = []string{"ID", "Nama", "Jenis", "Lahan", "Jumlah"}
-		}
-		// deklarasi array lebar untuk menyimpam lebar dari tabel
-		lebarMaksimal := make([]int, len(label))
-		// memasukkan data panjang tabel awal berdasarkan length dari label
-		for i, v := range label {
-			lebarMaksimal[i] = len(v)
-		}
-		/*
-			perulangan untuk melihat apabila ada nilai yang lebih besar
-			dan menukar isi dari var lebarMaksimal
-		*/
-		var kolom = []string{}
-		for i, v := range *arr {
-			if a {
-				kolom = []string{
-					strconv.Itoa(i + 1),
-					strconv.Itoa(v.id),
-					v.namatanaman,
-					v.jenistanaman,
-					strconv.Itoa(v.lahan),
-					strconv.Itoa(v.jumlahBibit),
+	// newline
+	fmt.Println()
+	// menampilkan isi array
+	for _, v := range x {
+		if len(v.nama) == 0 {
+			fmt.Print("+")
+			for _, lebar := range lebarMaksimal {
+				for i := 0; i < lebar+2; i++ {
+					fmt.Print("-")
 				}
-			} else {
-				kolom = []string{
-					strconv.Itoa(v.id),
-					v.namatanaman,
-					v.jenistanaman,
-					strconv.Itoa(v.lahan),
-					strconv.Itoa(v.jumlahBibit),
-				}
-			}
-
-			for i, v := range kolom {
-				if len(v) > lebarMaksimal[i] {
-					lebarMaksimal[i] = len(v)
-				}
-			}
-		}
-		garisPembatas(lebarMaksimal)
-		// spasi
-		fmt.Println()
-		// memberi garis di awal
-		fmt.Print("|")
-		// perulangan untuk memasukkan judul tabel
-		for i, judul := range label {
-			// formatting string
-			fmt.Printf(" %-*s |", lebarMaksimal[i], judul)
-		}
-		// memberikan spasi
-		fmt.Println()
-		garisPembatas(lebarMaksimal)
-		fmt.Println()
-		for i, v := range *arr {
-			fmt.Print("|")
-			if a {
-				kolom = []string{
-					strconv.Itoa(i + 1),
-					strconv.Itoa(v.id),
-					v.namatanaman,
-					v.jenistanaman,
-					strconv.Itoa(v.lahan),
-					strconv.Itoa(v.jumlahBibit),
-				}
-			} else {
-				kolom = []string{
-					strconv.Itoa(v.id),
-					v.namatanaman,
-					v.jenistanaman,
-					strconv.Itoa(v.lahan),
-					strconv.Itoa(v.jumlahBibit),
-				}
-			}
-
-			for i, v := range kolom {
-				fmt.Printf(" %-*s |", lebarMaksimal[i], v)
+				// pojok kiri
+				fmt.Print("+")
 			}
 			fmt.Println()
-		}
-		fmt.Print("+")
-		for _, lebar := range lebarMaksimal {
-			for i := 0; i < lebar+2; i++ {
-				fmt.Print("-")
-			}
-			fmt.Print("+")
-		}
-		fmt.Println()
-	case *[]Tanaman:
-		var label = []string{}
-		if a {
-			label = []string{"No,", "ID", "Nama", "Jenis", "Grade"}
+			return
 		} else {
-			label = []string{"ID", "Nama", "Jenis", "Grade"}
-		}
-		// deklarasi array lebar untuk menyimpam lebar dari tabel
-		lebarMaksimal := make([]int, len(label))
-		// memasukkan data panjang tabel awal berdasarkan length dari label
-		for i, v := range label {
-			lebarMaksimal[i] = len(v)
-		}
-		/*
-			perulangan untuk melihat apabila ada nilai yang lebih besar
-			dan menukar isi dari var lebarMaksimal
-		*/
-		var kolom = []string{}
-		for i, v := range *arr {
-			if a {
-				kolom = []string{
-					strconv.Itoa(i + 1),
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					v.grade,
-				}
-			} else {
-				kolom = []string{
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					v.grade,
-				}
-			}
-
-			for i, v := range kolom {
-				if len(v) > lebarMaksimal[i] {
-					lebarMaksimal[i] = len(v)
-				}
-			}
-		}
-		garisPembatas(lebarMaksimal)
-		// spasi
-		fmt.Println()
-		// memberi garis di awal
-		fmt.Print("|")
-		// perulangan untuk memasukkan judul tabel
-		for i, judul := range label {
-			// formatting string
-			fmt.Printf(" %-*s |", lebarMaksimal[i], judul)
-		}
-		// memberikan spasi
-		fmt.Println()
-		garisPembatas(lebarMaksimal)
-		fmt.Println()
-		for i, v := range *arr {
 			fmt.Print("|")
-			if a {
-				kolom = []string{
-					strconv.Itoa(i + 1),
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					v.grade,
+		}
+		kolom := [6]string{
+			strconv.Itoa(v.id),
+			v.nama,
+			v.jenis,
+			v.grade,
+			strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
+			v.tanggal,
+		}
+		if len(v.nama) == 0 {
+			fmt.Print("+")
+			for _, lebar := range lebarMaksimal {
+				for i := 0; i < lebar+2; i++ {
+					fmt.Print("-")
 				}
-			} else {
-				kolom = []string{
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					v.grade,
-				}
-			}
-
-			for i, v := range kolom {
-				fmt.Printf(" %-*s |", lebarMaksimal[i], v)
+				// pojok kiri
+				fmt.Print("+")
 			}
 			fmt.Println()
+			return
 		}
-		fmt.Print("+")
-		for _, lebar := range lebarMaksimal {
-			for i := 0; i < lebar+2; i++ {
-				fmt.Print("-")
-			}
-			fmt.Print("+")
-		}
-		fmt.Println()
-	case *[]HasilPanen:
-		var label = []string{}
-		if a {
-			label = []string{"No", "ID", "Nama", "Jenis", "Jumlah (Kg)", "Grade"}
-		} else {
-			label = []string{"ID", "Nama", "Jenis", "Jumlah (Kg)", "Grade"}
-		}
-		// deklarasi array lebar untuk menyimpam lebar dari tabel
-		lebarMaksimal := make([]int, len(label))
-		// memasukkan data panjang tabel awal berdasarkan length dari label
-		for i, v := range label {
-			lebarMaksimal[i] = len(v)
-		}
-		/*
-			perulangan untuk melihat apabila ada nilai yang lebih besar
-			dan menukar isi dari var lebarMaksimal
-		*/
-		var kolom = []string{}
-		for i, v := range *arr {
-			if a {
-				kolom = []string{
-					strconv.Itoa(i + 1),
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
-					v.grade,
-				}
-			} else {
-				kolom = []string{
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
-					v.grade,
-				}
-			}
+		for i, v := range kolom {
 
-			for i, v := range kolom {
-				if len(v) > lebarMaksimal[i] {
-					lebarMaksimal[i] = len(v)
-				}
-			}
-		}
-		garisPembatas(lebarMaksimal)
-		// spasi
-		fmt.Println()
-		// memberi garis di awal
-		fmt.Print("|")
-		// perulangan untuk memasukkan judul tabel
-		for i, judul := range label {
-			// formatting string
-			fmt.Printf(" %-*s |", lebarMaksimal[i], judul)
-		}
-		// memberikan spasi
-		fmt.Println()
-		garisPembatas(lebarMaksimal)
-		fmt.Println()
-		for i, v := range *arr {
-			fmt.Print("|")
-			if a {
-				kolom = []string{
-					strconv.Itoa(i + 1),
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
-					v.grade,
-				}
-			} else {
-				kolom = []string{
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
-					v.grade,
-				}
-			}
-
-			for i, v := range kolom {
-				fmt.Printf(" %-*s |", lebarMaksimal[i], v)
-			}
-			fmt.Println()
-		}
-		fmt.Print("+")
-		for _, lebar := range lebarMaksimal {
-			for i := 0; i < lebar+2; i++ {
-				fmt.Print("-")
-			}
-			fmt.Print("+")
-		}
-		fmt.Println()
-	case *[]RiwayatPanen:
-		var label = []string{}
-		if a {
-			label = []string{"No", "ID", "Nama", "Jenis", "Jumlah (Kg)", "Grade", "Tanggal"}
-		} else {
-			label = []string{"ID", "Nama", "Jenis", "Jumlah (Kg)", "Grade", "Tanggal"}
-		}
-		// deklarasi array lebar untuk menyimpam lebar dari tabel
-		lebarMaksimal := make([]int, len(label))
-		// memasukkan data panjang tabel awal berdasarkan length dari label
-		for i, v := range label {
-			lebarMaksimal[i] = len(v)
-		}
-		/*
-			perulangan untuk melihat apabila ada nilai yang lebih besar
-			dan menukar isi dari var lebarMaksimal
-		*/
-		var kolom = []string{}
-		for i, v := range *arr {
-			if a {
-				kolom = []string{
-					strconv.Itoa(i + 1),
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
-					v.grade,
-					v.tanggal,
-				}
-			} else {
-				kolom = []string{
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
-					v.grade,
-					v.tanggal,
-				}
-			}
-			for i, v := range kolom {
-				if len(v) > lebarMaksimal[i] {
-					lebarMaksimal[i] = len(v)
-				}
-			}
-		}
-		garisPembatas(lebarMaksimal)
-		// spasi
-		fmt.Println()
-		// memberi garis di awal
-		fmt.Print("|")
-		// perulangan untuk memasukkan judul tabel
-		for i, judul := range label {
-			// formatting string
-			fmt.Printf(" %-*s |", lebarMaksimal[i], judul)
-		}
-		// memberikan spasi
-		fmt.Println()
-		garisPembatas(lebarMaksimal)
-		fmt.Println()
-		for i, v := range *arr {
-			fmt.Print("|")
-			if a {
-				kolom = []string{
-					strconv.Itoa(i + 1),
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
-					v.grade,
-					v.tanggal,
-				}
-			} else {
-				kolom = []string{
-					strconv.Itoa(v.id),
-					v.nama,
-					v.jenis,
-					strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
-					v.grade,
-					v.tanggal,
-				}
-			}
-
-			for i, v := range kolom {
-				fmt.Printf(" %-*s |", lebarMaksimal[i], v)
-			}
-			fmt.Println()
-		}
-		fmt.Print("+")
-		for _, lebar := range lebarMaksimal {
-			for i := 0; i < lebar+2; i++ {
-				fmt.Print("-")
-			}
-			fmt.Print("+")
+			fmt.Printf(" %-*s |", lebarMaksimal[i], v)
 		}
 		fmt.Println()
 	}
+	fmt.Println()
+
+	// akhir dari tabel (penutup)
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
+		}
+		// pojok kiri
+		fmt.Print("+")
+	}
+
+}
+func tampilkanTanaman(x [100]Tanaman) {
+	label := []string{"ID", "Nama", "Jenis", "Grade"}
+	lebarMaksimal := [4]int{}
+	for i, v := range label {
+		lebarMaksimal[i] = len(v)
+	}
+
+	for _, v := range x {
+		kolom := [4]string{
+			strconv.Itoa(v.id),
+			v.nama,
+			v.jenis,
+			v.grade,
+		}
+
+		for i, v := range kolom {
+			if len(v) > lebarMaksimal[i] {
+				lebarMaksimal[i] = len(v)
+			}
+		}
+	}
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
+		}
+		// pojok kiri
+		fmt.Print("+")
+	}
+	// newline
+	fmt.Println()
+	// memberi garis di awal
+	fmt.Print("|")
+	for i, judul := range label {
+		// formatting string
+		fmt.Printf(" %-*s |", lebarMaksimal[i], judul)
+	}
+	// newline
+	fmt.Println()
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
+		}
+		// pojok kiri
+		fmt.Print("+")
+	}
+	// newline
+	fmt.Println()
+	// menampilkan isi array
+	for _, v := range x {
+		if len(v.nama) == 0 {
+			fmt.Print("+")
+			for _, lebar := range lebarMaksimal {
+				for i := 0; i < lebar+2; i++ {
+					fmt.Print("-")
+				}
+				// pojok kiri
+				fmt.Print("+")
+			}
+			fmt.Println()
+			return
+		} else {
+			fmt.Print("|")
+		}
+		kolom := [4]string{
+			strconv.Itoa(v.id),
+			v.nama,
+			v.jenis,
+			v.grade,
+		}
+		if len(v.nama) == 0 {
+			fmt.Print("+")
+			for _, lebar := range lebarMaksimal {
+				for i := 0; i < lebar+2; i++ {
+					fmt.Print("-")
+				}
+				// pojok kiri
+				fmt.Print("+")
+			}
+			fmt.Println()
+			return
+		}
+		for i, v := range kolom {
+
+			fmt.Printf(" %-*s |", lebarMaksimal[i], v)
+		}
+		fmt.Println()
+	}
+	fmt.Println()
+
+	// akhir dari tabel (penutup)
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
+		}
+		// pojok kiri
+		fmt.Print("+")
+	}
+
+}
+func tampilkanHasilPanen(x [100]HasilPanen) {
+	label := []string{"ID", "Nama", "Jenis", "Jumlah (Kg)", "Grade"}
+	lebarMaksimal := [5]int{}
+	for i, v := range label {
+		lebarMaksimal[i] = len(v)
+	}
+
+	for _, v := range x {
+		kolom := [5]string{
+			strconv.Itoa(v.id),
+			v.nama,
+			v.jenis,
+			strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
+			v.grade,
+		}
+
+		for i, v := range kolom {
+			if len(v) > lebarMaksimal[i] {
+				lebarMaksimal[i] = len(v)
+			}
+		}
+	}
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
+		}
+		// pojok kiri
+		fmt.Print("+")
+	}
+	// newline
+	fmt.Println()
+	// memberi garis di awal
+	fmt.Print("|")
+	for i, judul := range label {
+		// formatting string
+		fmt.Printf(" %-*s |", lebarMaksimal[i], judul)
+	}
+	// newline
+	fmt.Println()
+	// pojok kanan
+	fmt.Print("+")
+	for _, lebar := range lebarMaksimal {
+		// perulangan untuk menambahkan `---`  sesuai dengan
+		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
+			fmt.Print("-")
+		}
+		// pojok kiri
+		fmt.Print("+")
+	}
+	// newline
+	fmt.Println()
+	// menampilkan isi array
+	for _, v := range x {
+		if len(v.nama) == 0 {
+			fmt.Print("+")
+			for _, lebar := range lebarMaksimal {
+				for i := 0; i < lebar+2; i++ {
+					fmt.Print("-")
+				}
+				// pojok kiri
+				fmt.Print("+")
+			}
+			fmt.Println()
+			return
+		} else {
+			fmt.Print("|")
+		}
+		kolom := [5]string{
+			strconv.Itoa(v.id),
+			v.nama,
+			v.jenis,
+			strconv.FormatFloat(v.jumlahKg, 'f', 1, 64),
+			v.grade,
+		}
+		if len(v.nama) == 0 {
+			fmt.Print("+")
+			for _, lebar := range lebarMaksimal {
+				for i := 0; i < lebar+2; i++ {
+					fmt.Print("-")
+				}
+				// pojok kiri
+				fmt.Print("+")
+			}
+			fmt.Println()
+			return
+		}
+		for i, v := range kolom {
+
+			fmt.Printf(" %-*s |", lebarMaksimal[i], v)
+		}
+		fmt.Println()
+	}
+	fmt.Println()
+
+	// akhir dari tabel (penutup)
+	// pojok kanan
+
 }
 
+/*
+===============================
+|| Tambah Data                 ||
+===============================
+*/
+func TambahData(arrTujuan int, x *int) {
+	var reader = bufio.NewReader(os.Stdin)
+	switch arrTujuan {
+	case 1:
+		var lahan, jumlahBibit int
+		arrPenanaman[*x].id = *x + 1
+		fmt.Print("Masukkan nama tanaman: ")
+		namatanaman, _ := reader.ReadString('\n')
+		namatanaman = strings.TrimSpace(namatanaman)
+		arrPenanaman[*x].namatanaman = namatanaman
+		fmt.Print("Masukkan jenis tanaman : ")
+		jenistanaman, _ := reader.ReadString('\n')
+		jenistanaman = strings.TrimSpace(jenistanaman)
+		arrPenanaman[*x].jenistanaman = jenistanaman
+		fmt.Print("Masukkan lahan: ")
+		fmt.Scanln(&lahan)
+		arrPenanaman[*x].lahan = lahan
+		fmt.Print("Masukkan jumlah bibit: ")
+		fmt.Scanln(&jumlahBibit)
+		arrPenanaman[*x].jumlahBibit = jumlahBibit
+		*x++
+	case 2:
+		arrTanaman[*x].id = *x + 1
+		fmt.Print("Masukkan nama tanaman: ")
+		namatanaman, _ := reader.ReadString('\n')
+		namatanaman = strings.TrimSpace(namatanaman)
+		arrTanaman[*x].nama = namatanaman
+		fmt.Print("Masukkan jenis tanaman : ")
+		jenistanaman, _ := reader.ReadString('\n')
+		jenistanaman = strings.TrimSpace(jenistanaman)
+		arrTanaman[*x].jenis = jenistanaman
+		fmt.Print("Masukkan grade: ")
+		grade, _ := reader.ReadString('\n')
+		grade = strings.TrimSpace(grade)
+		arrTanaman[*x].grade = grade
+		*x++
+	case 3:
+		var jumlahKg float64
+		arrHasilPanen[*x].id = *x + 1
+		fmt.Print("Masukkan nama tanaman: ")
+		namatanaman, _ := reader.ReadString('\n')
+		namatanaman = strings.TrimSpace(namatanaman)
+		arrHasilPanen[*x].nama = namatanaman
+		fmt.Print("Masukkan jenis tanaman : ")
+		jenistanaman, _ := reader.ReadString('\n')
+		jenistanaman = strings.TrimSpace(jenistanaman)
+		arrHasilPanen[*x].jenis = jenistanaman
+		fmt.Print("Masukkan grade: ")
+		grade, _ := reader.ReadString('\n')
+		grade = strings.TrimSpace(grade)
+		arrTanaman[*x].grade = grade
+		fmt.Print("Masukkan jumlah bibit: ")
+		fmt.Scanln(&jumlahKg)
+		arrHasilPanen[*x].jumlahKg = jumlahKg
+
+		*x++
+	case 4:
+
+	}
+}
+
+/*===============================
+|| ClearTerminal (cls)         ||
+===============================*/
+
+func clearTerminal() {
+	var cmd *exec.Cmd
+	sistemOperasi := runtime.GOOS
+	if sistemOperasi == "windows" {
+		// hanya berkerja di windows
+		cmd = exec.Command("cmd", "/c", "cls")
+		// output
+	} else if sistemOperasi == "linux" {
+		cmd = exec.Command("clear")
+	}
+	cmd.Stdout = os.Stdout
+	// error
+	cmd.Stderr = os.Stderr
+	cmd.Run()
+
+}
+
+/*
+===============================
+|| Inisiasi Data Array        ||
+===============================
+*/
 func inisiasiDataAwal() {
-	arrTanaman = []Tanaman{
+	arrTanaman = [100]Tanaman{
 		{1, "Jagung", "Jagung Manis", "A"},
 		{2, "Tomat", "Tomat Cherry", "A"},
 		{3, "Tomat", "Tomat Sayur", "B"},
@@ -1252,7 +843,7 @@ func inisiasiDataAwal() {
 		{19, "Bawang", "Bawang Putih Lumbu Kuning", "A"},
 		{20, "Nanas", "Nanas Queen", "A"},
 	}
-	arrPenanaman = []Penanaman{
+	arrPenanaman = [100]Penanaman{
 		{1, "Jagung", "Jagung Manis", 1, 150},
 		{2, "Tomat", "Tomat Cherry", 1, 120},
 		{3, "Tomat", "Tomat Sayur", 2, 100},
@@ -1274,7 +865,7 @@ func inisiasiDataAwal() {
 		{19, "Bawang", "Bawang Putih Lumbu Kuning", 10, 90},
 		{20, "Nanas", "Nanas Queen", 10, 100},
 	}
-	arrHasilPanen = []HasilPanen{
+	arrHasilPanen = [100]HasilPanen{
 		{1, "Jagung", "Jagung Manis", 320.5, "A"},
 		{2, "Tomat", "Tomat Cherry", 250.0, "A"},
 		{3, "Tomat", "Tomat Sayur", 230.0, "B"},
@@ -1296,7 +887,7 @@ func inisiasiDataAwal() {
 		{19, "Bawang", "Bawang Putih Lumbu Kuning", 280.0, "A"},
 		{20, "Nanas", "Nanas Queen", 300.0, "A"},
 	}
-	arrRiwayatPanen = []RiwayatPanen{
+	arrRiwayatPanen = [100]RiwayatPanen{
 		{1, "Jagung", "Jagung Manis", 320.5, "A", "2024-05-15"},
 		{2, "Tomat", "Tomat Cherry", 250.0, "A", "2024-05-02"},
 		{3, "Tomat", "Tomat Sayur", 230.0, "B", "2024-05-10"},
@@ -1320,25 +911,13 @@ func inisiasiDataAwal() {
 	}
 }
 
-// lain - lain
-func garisPembatas(lebarMaksimal []int) {
-	fmt.Print("+")
-	for _, lebar := range lebarMaksimal {
-		// perulangan untuk menambahkan ---  sesuai dengan
-		for i := 0; i < lebar+2; i++ { // +2 spasi untuk readability
-			fmt.Print("-")
-		}
-		// pojok atas kiri
-		fmt.Print("+")
-	}
-}
-
-func clearTerminal() {
-	// hanya berkerja di windows
-	cmd := exec.Command("cmd", "/c", "cls")
-	// output
-	cmd.Stdout = os.Stdout
-	// error
-	cmd.Stderr = os.Stderr
-	cmd.Run()
-}
+/*
+Program harus dibuat secara modular dengan menggunakan subprogram. [x]
+Program memiliki tema. Tema Bebas (contoh : peternakan, pertanian, pendidikan, kesehatan dll) [X]
+Struktur subprogram ditentukan oleh masing-masing kelompok. Setiap subprogram harus dilengkapi dengan parameter dan spesifikasinya. []
+Program harus mengimplementasikan Array(min 3) dan Tipe Bentukan(min 3). Array statis harus digunakan, bukan array dinamis atau slice. []
+Program harus mengimplementasikan algoritma Sequential dan Binary Search untuk pencarian data, pengubahan (edit), atau penghapusan data tertentu. []
+Program harus mengimplementasikan algoritma Selection Sort dan Insertion Sort untuk mengurutkan data dalam kategori yang berbeda saat menampilkan hasil. Setiap kategori harus bisa diurutkan dalam urutan naik (ascending) maupun turun (descending). []
+Penggunaan statement break (kecuali dalam repeat-until) dan continue tidak diperbolehkan. []
+Variabel global hanya diperbolehkan untuk menyimpan array utama yang akan diproses. []
+*/
